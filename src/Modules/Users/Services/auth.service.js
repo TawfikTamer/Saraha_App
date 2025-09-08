@@ -57,16 +57,24 @@ export const registerServices = async (req, res) => {
     },
     {
       upsert: true,
+      new: true,
     }
   );
 
   // add the otp
-  await userOTPs.create({
-    userId: user._id,
-    confirm: hashedOTP,
-    expiration: new Date(Date.now() + parseInt(process.env.RESEND_OTP_TIME) * 60 * 1000),
-    attemptNumber: 1,
-  });
+  await userOTPs.findOneAndUpdate(
+    {
+      userId: user._id,
+    },
+    {
+      confirm: hashedOTP,
+      expiration: new Date(Date.now() + parseInt(process.env.RESEND_OTP_TIME) * 60 * 1000),
+      attemptNumber: 1,
+    },
+    {
+      upsert: true,
+    }
+  );
 
   // create auth token
   const authenticationToken = generateToken(

@@ -1,5 +1,5 @@
 import { userOTPs } from "../DB/Models/index.js";
 
 export const deleteOTP = async (user) => {
-  await userOTPs.delete({ userId: user._id });
+  await userOTPs.deleteOne({ userId: user._id });
 };
