@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { users, messages } from "../../../DB/Models/index.js";
+import { users, messages, connectedDevices } from "../../../DB/Models/index.js";
 import fs from "node:fs";
 
 /**
@@ -52,6 +52,9 @@ export const deleteService = async (req, res) => {
   if (profilePic) {
     fs.unlinkSync(profilePic);
   }
+
+  // delete the connected devices
+  await connectedDevices.deleteOne({ userId: _id });
 
   // delete the user
   const deletedUser = await users.findByIdAndDelete({ _id }, { session });

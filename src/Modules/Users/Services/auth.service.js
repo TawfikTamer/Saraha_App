@@ -1,6 +1,5 @@
-
 import { users, blackListTokens, userOTPs, connectedDevices } from "../../../DB/Models/index.js";
-import { generateToken, verifyToken, encrypt, emitter, decodeToken, deleteOTP } from "../../../Utils/index.js";
+import { generateToken, encrypt, emitter, decodeToken, deleteOTP } from "../../../Utils/index.js";
 import bycrpt from "bcrypt";
 import { customAlphabet, nanoid } from "nanoid";
 import { v4 as uuidV4 } from "uuid";
