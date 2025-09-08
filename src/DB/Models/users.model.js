@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
-import { genderEnum, providerEnum } from "../../common/Enums/user.enum.js";
-import { type } from "node:os";
+import { genderEnum, providerEnum } from "../../Common/Enums/index.js";
 
 const usersSchema = mongoose.Schema(
   {

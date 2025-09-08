@@ -12,7 +12,7 @@ export const registerServices = async (req, res) => {
   // find the email
   const findUser = await users.findOne({ email });
   if (findUser) {
-    if (findUser.providers == "google") {
+    if (findUser.providers == providerEnum.GOOGLE) {
       return res.status(400).json({ msg: `User Already exist, Try to login using google` });
     }
     if (findUser.isConfirmed == false) {
@@ -50,7 +50,7 @@ export const registerServices = async (req, res) => {
     password: hashedPassword,
     phoneNumber: encryptedPhoneNumber,
     gender,
-    providers: "local",
+    providers: providerEnum.LOCAL,
   });
 
   // add the otp
@@ -103,14 +103,14 @@ export const gmailAuthService = async (req, res) => {
     user.email = email;
     user.firstName = given_name;
     user.lastName = family_name ? family_name : user.lastName;
-    user.providers = "google";
+    user.providers = providerEnum.GOOGLE;
     await user.save();
   }
 
   // if user is not logged in using google:
   else {
     // check if this user is not logged in using local signup
-    const localUser = await users.findOne({ email, providers: "local" });
+    const localUser = await users.findOne({ email, providers: providerEnum.LOCAL });
     if (localUser) {
       user = localUser;
       user.email = email;
@@ -118,7 +118,7 @@ export const gmailAuthService = async (req, res) => {
       user.lastName = family_name ? family_name : user.lastName;
       user.isConfirmed = true;
       user.googleSub = sub;
-      user.providers = "google";
+      user.providers = providerEnum.GOOGLE;
       await user.save();
       deleteOTP(user);
     } else {
@@ -130,7 +130,7 @@ export const gmailAuthService = async (req, res) => {
         password: bycrpt.hashSync(nanoid(), parseInt(process.env.SALT_ROUNDS)),
         isConfirmed: true,
         googleSub: sub,
-        providers: "google",
+        providers: providerEnum.GOOGLE,
       });
     }
   }
@@ -222,7 +222,7 @@ export const loginService = async (req, res) => {
   const user = await users.findOne({ email });
 
   // check if the user registerd locally or not
-  if (user?.providers == "google") {
+  if (user?.providers == providerEnum.GOOGLE) {
     return res.status(400).json({ msg: `Try login with google` });
   }
 
