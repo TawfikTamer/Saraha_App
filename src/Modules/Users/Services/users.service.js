@@ -134,7 +134,10 @@ export const uploadProfilePictureService = async (req, res) => {
   const { user } = req.loggedData;
 
   // upload the profile pic
-  user.profilePic = req.file?.path;
+  if (!req.file) {
+    return res.status(400).json({ msg: `You must upload a photo` });
+  }
+  user.profilePic = req.file.path;
   await user.save();
 
   res.status(200).json({ msg: `Profile pic added successfully`, file: req.file });
