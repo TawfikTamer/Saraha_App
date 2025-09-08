@@ -45,6 +45,8 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
+  console.log(err);
+
   if (req.session?.inTransaction()) {
     req.session.abortTransaction();
     req.session.endSession();

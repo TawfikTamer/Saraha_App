@@ -23,4 +23,4 @@ const userOTPsSchema = mongoose.Schema({
   },
 });
 
-export const userOTPs = mongoose.model("userOTPs", userOTPsSchema);
+export const userOTPs = mongoose.model("user OTPs", userOTPsSchema);

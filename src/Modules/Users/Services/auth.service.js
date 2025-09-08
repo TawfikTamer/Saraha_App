@@ -1,5 +1,5 @@
-import { users, blackListTokens } from "../../../DB/Models/index.js";
-import { generateToken, verifyToken, encrypt, emitter, decodeToken } from "../../../Utils/index.js";
+import { users, blackListTokens, userOTPs } from "../../../DB/Models/index.js";
+import { generateToken, verifyToken, encrypt, emitter, decodeToken, deleteOTP } from "../../../Utils/index.js";
 import bycrpt from "bcrypt";
 import { customAlphabet, nanoid } from "nanoid";
 import { v4 as uuidV4 } from "uuid";
@@ -50,8 +50,15 @@ export const registerServices = async (req, res) => {
     password: hashedPassword,
     phoneNumber: encryptedPhoneNumber,
     gender,
-    otps: { confirm: hashedOTP, expiration: new Date(Date.now() + parseInt(process.env.RESEND_OTP_TIME) * 60 * 1000), attemptNumber: 1 },
     providers: "local",
+  });
+
+  // add the otp
+  await userOTPs.create({
+    userId: user._id,
+    confirm: hashedOTP,
+    expiration: new Date(Date.now() + parseInt(process.env.RESEND_OTP_TIME) * 60 * 1000),
+    attemptNumber: 1,
   });
 
   // create auth token
@@ -111,9 +118,9 @@ export const gmailAuthService = async (req, res) => {
       user.lastName = family_name ? family_name : user.lastName;
       user.isConfirmed = true;
       user.googleSub = sub;
-      user.otps.confirm = undefined;
       user.providers = "google";
       await user.save();
+      deleteOTP(user);
     } else {
       // create new user
       user = await users.create({
@@ -128,10 +135,10 @@ export const gmailAuthService = async (req, res) => {
     }
   }
 
-  // check for the number of logged in devices
-  if (user.devicesConnected?.length >= process.env.MAX_DEVICE_CONNECTED) {
-    return res.status(400).json({ msg: `You need to signOut from one of your connected devices to login` });
-  }
+  // // check for the number of logged in devices
+  // if (devicesConnected?.length >= process.env.MAX_DEVICE_CONNECTED) {
+  //   return res.status(400).json({ msg: `You need to signOut from one of your connected devices to login` });
+  // }
 
   // generate tokens
   const accessTokenId = uuidV4();
@@ -163,11 +170,11 @@ export const gmailAuthService = async (req, res) => {
     }
   );
 
-  // insert the connected device data
-  const { jti, exp } = decodeToken(refreshToken);
+  // // insert the connected device data
+  // const { jti, exp } = decodeToken(refreshToken);
 
-  user.devicesConnected?.push({ jti, exp: new Date(exp * 1000) });
-  await user.save();
+  // user.devicesConnected?.push({ jti, exp: new Date(exp * 1000) });
+  // await user.save();
 
   res.status(200).json({ msg: `User loggin successfully`, accessToken, refreshToken });
 };
@@ -183,19 +190,21 @@ export const confirmService = async (req, res) => {
   }
 
   // get the Right otp from db
-  const correctOtp = user.otps?.confirm;
+  const userOTPS = await userOTPs.findOne({ userId: user._id });
+  const correctOtp = userOTPS.confirm;
 
   // compaite the OTPs together
   const otpIsMatched = await bycrpt.compare(otp.toString(), correctOtp);
   if (!otpIsMatched) {
-    const remainingTime = (user.otps.expiration - new Date()) / 1000;
+    const remainingTime = (userOTPS.expiration - new Date()) / 1000;
     const remainingTimeMessage = remainingTime < 0 ? `Now` : `after ${remainingTime} sec`;
 
     return res.status(400).json({ msg: `worng OTP, please try again , you can resend email ${remainingTimeMessage}` });
   }
 
   // if it is correct , delete the otp from db
-  await user.updateOne({ isConfirmed: true, otps: {} });
+  await user.updateOne({ isConfirmed: true });
+  deleteOTP(user);
 
   res.status(200).json({ msg: `email has been confirmed, Now please sing in` });
 };
@@ -229,10 +238,10 @@ export const loginService = async (req, res) => {
     return res.status(400).json({ msg: `This email is not verified yet` });
   }
 
-  // check for the number of logged in devices
-  if (user.devicesConnected?.length >= process.env.MAX_DEVICE_CONNECTED) {
-    return res.status(400).json({ msg: `You need to signOut from one of your connected devices to login` });
-  }
+  // // check for the number of logged in devices
+  // if (user.devicesConnected?.length >= process.env.MAX_DEVICE_CONNECTED) {
+  //   return res.status(400).json({ msg: `You need to signOut from one of your connected devices to login` });
+  // }
 
   // generate token
   const accessTokenId = uuidV4();
@@ -264,11 +273,11 @@ export const loginService = async (req, res) => {
     }
   );
 
-  // insert the connected device data
-  const { jti, exp } = decodeToken(refreshToken);
+  // // insert the connected device data
+  // const { jti, exp } = decodeToken(refreshToken);
 
-  user.devicesConnected?.push({ jti, exp: new Date(exp * 1000) });
-  await user.save();
+  // user.devicesConnected?.push({ jti, exp: new Date(exp * 1000) });
+  // await user.save();
 
   res.status(200).json({ msg: `User logged In successfully`, accessToken, refreshToken });
 };
@@ -337,7 +346,16 @@ export const forgetPasswordService = async (req, res) => {
   const hashedRecoveryOTP = await bycrpt.hash(recoveryOTP, parseInt(process.env.SALT_ROUNDS));
 
   // store the otp in db and the time for expiration
-  await user.updateOne({ otps: { recovery: hashedRecoveryOTP, expiration: new Date(Date.now() + parseInt(process.env.RESEND_OTP_TIME) * 60 * 1000) } });
+  await userOTPs.findOneAndUpdate(
+    { userId: user._id },
+    {
+      userId: user._id,
+      recovery: hashedRecoveryOTP,
+      expiration: new Date(Date.now() + parseInt(process.env.RESEND_OTP_TIME) * 60 * 1000),
+      attemptNumber: 1,
+    },
+    { upsert: true }
+  );
 
   res.status(200).json({ msg: `please check your email`, recoveryToken });
 };
@@ -348,7 +366,8 @@ export const resetPasswordService = async (req, res) => {
   const { user } = req.loggedData;
 
   // get the Right otp from db
-  const correctOtp = user.otps?.recovery;
+  const userOTPS = await userOTPs.findOne({ userId: user._id });
+  const correctOtp = userOTPS.recovery;
 
   if (!correctOtp) {
     return res.status(400).json({ msg: `Wrong email` });
@@ -358,7 +377,7 @@ export const resetPasswordService = async (req, res) => {
   const otpIsMatched = await bycrpt.compare(otp.toString(), correctOtp);
 
   if (!otpIsMatched) {
-    const remainingTime = (user.otps.expiration - new Date()) / 1000;
+    const remainingTime = (userOTPS.expiration - new Date()) / 1000;
     const remainingTimeMessage = remainingTime < 0 ? `Now` : `after ${remainingTime} sec`;
 
     return res.status(400).json({ msg: `worng OTP, please try again , you can resend email ${remainingTimeMessage}` });
@@ -368,7 +387,9 @@ export const resetPasswordService = async (req, res) => {
   const hashedPassword = await bycrpt.hash(newPassword, parseInt(process.env.SALT_ROUNDS));
 
   // update the password and desconnect all the devices
-  await user.updateOne({ password: hashedPassword, otps: {}, $unset: { devicesConnected: "" } });
+  // await user.updateOne({ password: hashedPassword, otps: {}, $unset: { devicesConnected: "" } });
+  await user.updateOne({ password: hashedPassword });
+  deleteOTP(user);
 
   res.status(200).json({ msg: `Password has been changed, Now try to login` });
 };
@@ -440,11 +461,12 @@ export const resendEmailService = async (req, res) => {
   // get user data from token
   const { user } = req.loggedData;
 
+  const userOPT = await userOTPs.findOne({ userId: user._id });
   // check the user attempts
-  if (user.otps?.attemptNumber > 3) {
-    if (Date.now() - user.otps.lastEmailAttempt > 1000 * 60 * 5) {
-      user.otps.attemptNumber = 0;
-      await user.save();
+  if (userOPT.attemptNumber > 3) {
+    if (Date.now() - userOPT.lastEmailAttempt > 1000 * 60 * 5) {
+      userOPT.attemptNumber = 0;
+      await userOPT.save();
     }
     return res.status(400).json({ msg: `too many attempts , try again after 5 mins` });
   }
@@ -457,8 +479,8 @@ export const resendEmailService = async (req, res) => {
 
   // check if the this is recovery or registration
   let emailContent;
-  if (user.otps?.confirm) {
-    user.otps.confirm = hashedNewOTP;
+  if (userOPT.confirm) {
+    userOPT.confirm = hashedNewOTP;
     emailContent = {
       to: user.email,
       subject: `Email Confirmation`,
@@ -467,8 +489,8 @@ export const resendEmailService = async (req, res) => {
       <h2>${newOTP}</h2>
       </h1>;`,
     };
-  } else if (user.otps?.recovery) {
-    user.otps.recovery = hashedNewOTP;
+  } else if (userOPT.recovery) {
+    userOPT.recovery = hashedNewOTP;
     emailContent = {
       to: user.email,
       subject: `password recover`,
@@ -483,12 +505,12 @@ export const resendEmailService = async (req, res) => {
   emitter.emit("sendEmail", emailContent);
 
   // update the attempts
-  const newAttempt = user.otps.attemptNumber + 1;
+  const newAttempt = userOPT.attemptNumber + 1;
 
   // send the new data to the DB
-  user.otps.attemptNumber = newAttempt;
-  user.otps.lastEmailAttempt = Date.now();
-  await user.save();
+  userOPT.attemptNumber = newAttempt;
+  userOPT.lastEmailAttempt = Date.now();
+  await userOPT.save();
 
   res.status(200).json({ msg: `email has been send again` });
 };

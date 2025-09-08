@@ -10,4 +10,4 @@ const connectedDevicesSchema = mongoose.Schema({
   exp: { type: Date, required: true },
 });
 
-export const connectedDevices = mongoose.model("connectedDevices", connectedDevicesSchema);
+export const connectedDevices = mongoose.model("connected Devices", connectedDevicesSchema);
