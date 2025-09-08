@@ -422,17 +422,14 @@ export const resetPasswordService = async (req, res) => {
 
 export const refreshTokenServices = async (req, res) => {
   // get the refreshed token
-  const { refreshtoken } = req.headers;
-
-  // verfiy the token
-  const decodedData = verifyToken(refreshtoken, process.env.JWT_REFRESH_KEY);
+  const { refreshTokenData } = req.loggedData;
 
   // generate new access token
   const accessToken = generateToken(
     {
-      _id: decodedData._id,
-      email: decodedData.email,
-      refreshTokenId: decodeToken(refreshtoken).jti,
+      _id: refreshTokenData._id,
+      email: refreshTokenData.email,
+      refreshTokenId: refreshTokenData.jti,
     },
     process.env.JWT_ACCESS_KEY,
     {

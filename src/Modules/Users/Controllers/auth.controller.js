@@ -10,7 +10,7 @@ authRouter.post("/auth-gmail", services.gmailAuthService);
 authRouter.post("/login", validationMiddleware(loginSchema), services.loginService);
 authRouter.post("/logout", authenticationMiddleware, verifyRefreshTokenMiddleware, services.logoutService);
 authRouter.post("/forget-Password", validationMiddleware(forgetPasswordSchema), services.forgetPasswordService);
-authRouter.post("/refresh-token", services.refreshTokenServices);
+authRouter.post("/refresh-token", verifyRefreshTokenMiddleware, services.refreshTokenServices);
 authRouter.post("/resend-email", authenticationMiddleware, services.resendEmailService);
 
 authRouter.patch("/confirm", authenticationMiddleware, validationMiddleware(confirmSchema), services.confirmService);

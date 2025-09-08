@@ -5,6 +5,7 @@ export const verifyRefreshTokenMiddleware = async (req, res, next) => {
   // get the token from the header
   const { refreshtoken } = req.headers;
   // get the accsess token from the auth middleware
+  req.loggedData = req.loggedData || {}; // incase we send only this middleware
   const { tokenData } = req.loggedData;
 
   // check if the token is not send
@@ -27,7 +28,9 @@ export const verifyRefreshTokenMiddleware = async (req, res, next) => {
   }
 
   // check if the access and refresh token belongs to the same user
-  if (refreshTokenData.jti != tokenData.refreshTokenId) return res.status(400).json({ msg: `access and refresh tokens does not match for the same user` });
+  if (tokenData) {
+    if (refreshTokenData.jti != tokenData.refreshTokenId) return res.status(400).json({ msg: `access and refresh tokens does not match for the same user` });
+  }
 
   req.loggedData.refreshTokenData = refreshTokenData;
 
