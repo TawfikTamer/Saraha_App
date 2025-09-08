@@ -6,8 +6,12 @@ const connectedDevicesSchema = mongoose.Schema({
     required: true,
     ref: "users",
   },
-  jti: { type: String, required: true },
-  exp: { type: Date, required: true },
+  devices: [
+    {
+      jti: { type: String, required: true },
+      exp: { type: Date, required: true },
+    },
+  ],
 });
 
 export const connectedDevices = mongoose.model("connected Devices", connectedDevicesSchema);

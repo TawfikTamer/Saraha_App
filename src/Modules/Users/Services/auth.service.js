@@ -1,4 +1,4 @@
-import { users, blackListTokens, userOTPs } from "../../../DB/Models/index.js";
+import { users, blackListTokens, userOTPs, connectedDevices } from "../../../DB/Models/index.js";
 import { generateToken, verifyToken, encrypt, emitter, decodeToken, deleteOTP } from "../../../Utils/index.js";
 import bycrpt from "bcrypt";
 import { customAlphabet, nanoid } from "nanoid";
@@ -135,10 +135,11 @@ export const gmailAuthService = async (req, res) => {
     }
   }
 
-  // // check for the number of logged in devices
-  // if (devicesConnected?.length >= process.env.MAX_DEVICE_CONNECTED) {
-  //   return res.status(400).json({ msg: `You need to signOut from one of your connected devices to login` });
-  // }
+  // check for the number of logged in devices
+  const userDevices = await connectedDevices.findOne({ userId: user._id });
+  if (userDevices?.devices.length >= process.env.MAX_DEVICE_CONNECTED) {
+    return res.status(400).json({ msg: `You need to signOut from one of your connected devices to login` });
+  }
 
   // generate tokens
   const accessTokenId = uuidV4();
@@ -170,11 +171,15 @@ export const gmailAuthService = async (req, res) => {
     }
   );
 
-  // // insert the connected device data
-  // const { jti, exp } = decodeToken(refreshToken);
+  // insert the connected device data
+  const days = parseInt(process.env.JWT_REFRESH_EXPIRES_IN.split("")[0]);
+  const exp = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 
-  // user.devicesConnected?.push({ jti, exp: new Date(exp * 1000) });
-  // await user.save();
+  const newDevice = {
+    jti: refreshTokenId,
+    exp,
+  };
+  await connectedDevices.findOneAndUpdate({ userId: user._id }, { $push: { devices: newDevice } }, { upsert: true });
 
   res.status(200).json({ msg: `User loggin successfully`, accessToken, refreshToken });
 };
@@ -238,10 +243,10 @@ export const loginService = async (req, res) => {
     return res.status(400).json({ msg: `This email is not verified yet` });
   }
 
-  // // check for the number of logged in devices
-  // if (user.devicesConnected?.length >= process.env.MAX_DEVICE_CONNECTED) {
-  //   return res.status(400).json({ msg: `You need to signOut from one of your connected devices to login` });
-  // }
+  const userDevices = await connectedDevices.findOne({ userId: user._id });
+  if (userDevices?.devices.length >= process.env.MAX_DEVICE_CONNECTED) {
+    return res.status(400).json({ msg: `You need to signOut from one of your connected devices to login` });
+  }
 
   // generate token
   const accessTokenId = uuidV4();
@@ -273,11 +278,15 @@ export const loginService = async (req, res) => {
     }
   );
 
-  // // insert the connected device data
-  // const { jti, exp } = decodeToken(refreshToken);
+  // insert the connected device data
+  const days = parseInt(process.env.JWT_REFRESH_EXPIRES_IN.split("")[0]);
+  const exp = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 
-  // user.devicesConnected?.push({ jti, exp: new Date(exp * 1000) });
-  // await user.save();
+  const newDevice = {
+    jti: refreshTokenId,
+    exp,
+  };
+  await connectedDevices.findOneAndUpdate({ userId: user._id }, { $push: { devices: newDevice } }, { upsert: true });
 
   res.status(200).json({ msg: `User logged In successfully`, accessToken, refreshToken });
 };
@@ -293,11 +302,12 @@ export const logoutService = async (req, res) => {
   });
 
   // decrimint the conected devices
-  for (const [index, device] of user.devicesConnected.entries()) {
+  const userDevices = await connectedDevices.findOne({ userId: user._id });
+  for (const [index, device] of userDevices.devices.entries()) {
     if (device.jti == tokenData.refreshTokenId) {
-      user.devicesConnected.splice(index, 1);
-      if (user.devicesConnected.length == 0) user.devicesConnected = undefined;
-      await user.save();
+      userDevices.devices.splice(index, 1);
+      if (userDevices.devices.length == 0) userDevices.devices = undefined;
+      await userDevices.save();
       break;
     }
   }
@@ -387,8 +397,8 @@ export const resetPasswordService = async (req, res) => {
   const hashedPassword = await bycrpt.hash(newPassword, parseInt(process.env.SALT_ROUNDS));
 
   // update the password and desconnect all the devices
-  // await user.updateOne({ password: hashedPassword, otps: {}, $unset: { devicesConnected: "" } });
   await user.updateOne({ password: hashedPassword });
+  await connectedDevices.findOneAndDelete({ userId: user._id });
   deleteOTP(user);
 
   res.status(200).json({ msg: `Password has been changed, Now try to login` });
@@ -453,6 +463,7 @@ export const updatePasswordServices = async (req, res) => {
     tokenId: tokenData.jti,
     expirationDate: new Date(tokenData.exp * 1000),
   });
+  await connectedDevices.findOneAndDelete({ userId: user._id });
 
   res.status(200).json({ msg: `password has been updated. Now please log in again` });
 };
