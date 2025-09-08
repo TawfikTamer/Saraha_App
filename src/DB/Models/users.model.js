@@ -37,23 +37,6 @@ const usersSchema = mongoose.Schema(
     profilePic: {
       type: String,
     },
-    otps: {
-      confirm: {
-        type: String,
-      },
-      recovery: {
-        type: String,
-      },
-      expiration: {
-        type: Date,
-      },
-      attemptNumber: {
-        type: Number,
-      },
-      lastEmailAttempt: {
-        type: Date,
-      },
-    },
     isConfirmed: {
       type: Boolean,
       default: false,
@@ -64,12 +47,6 @@ const usersSchema = mongoose.Schema(
       enum: Object.values(providerEnum),
       default: providerEnum.LOCAL,
     },
-    devicesConnected: [
-      {
-        jti: { type: String },
-        exp: { type: Date },
-      },
-    ],
   },
   {
     timestamps: true,
