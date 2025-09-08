@@ -1,6 +1,12 @@
 import { messagePrivicyEnum } from "../../../Common/Enums/index.js";
 import { users, messages } from "../../../DB/Models/index.js";
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {POST} /api/messages/send-message/:receiverId
+ * @description Send a message to a user
+ */
 export const sendMessageServices = async (req, res) => {
   // get message content from body and the user from the params
   const { receiverId } = req.params;
@@ -18,6 +24,12 @@ export const sendMessageServices = async (req, res) => {
   res.status(201).json({ msg: `message has been send` });
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {GET} /api/messages/user-public-messages/:userId
+ * @description Get all public messages for a user
+ */
 export const publicMessagesService = async (req, res) => {
   // get the user id from params
   const { userId } = req.params;

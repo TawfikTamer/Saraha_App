@@ -1,3 +1,4 @@
+
 import { users, blackListTokens, userOTPs, connectedDevices } from "../../../DB/Models/index.js";
 import { generateToken, verifyToken, encrypt, emitter, decodeToken, deleteOTP } from "../../../Utils/index.js";
 import bycrpt from "bcrypt";
@@ -6,6 +7,12 @@ import { v4 as uuidV4 } from "uuid";
 import { OAuth2Client } from "google-auth-library";
 import { providerEnum } from "../../../Common/Enums/index.js";
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {POST} /api/auth/register
+ * @description Register a new user with hashed password and encrypted phone number
+ */
 export const registerServices = async (req, res) => {
   // get data from body
   const { firstName, lastName, email, password, phoneNumber, gender } = req.body;
@@ -92,6 +99,12 @@ export const registerServices = async (req, res) => {
   res.status(201).json({ msg: `Registered successfully, now please confirm your email`, authenticationToken });
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {POST} /api/auth/auth-gmail
+ * @description Authenticate user via Google OAuth and create/update user profile
+ */
 export const gmailAuthService = async (req, res) => {
   // get the idToken from the req body
   const { idToken } = req.body;
@@ -199,6 +212,12 @@ export const gmailAuthService = async (req, res) => {
   res.status(200).json({ msg: `User loggin successfully`, accessToken, refreshToken });
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {PATCH} /api/auth/confirm
+ * @description Confirm user email with OTP
+ */
 export const confirmService = async (req, res) => {
   // get the otp from the user and user from token
   const { otp } = req.body;
@@ -229,6 +248,12 @@ export const confirmService = async (req, res) => {
   res.status(200).json({ msg: `email has been confirmed, Now please sing in` });
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {POST} /api/auth/login
+ * @description Login user with email and password
+ */
 export const loginService = async (req, res) => {
   // get the email and passowrd
   const { email, password } = req.body;
@@ -306,6 +331,12 @@ export const loginService = async (req, res) => {
   res.status(200).json({ msg: `User logged In successfully`, accessToken, refreshToken });
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {POST} /api/auth/logout
+ * @description Logout user and revoke tokens
+ */
 export const logoutService = async (req, res) => {
   // get the token
   const { user, tokenData, refreshTokenData } = req.loggedData;
@@ -331,6 +362,12 @@ export const logoutService = async (req, res) => {
   res.status(200).json({ msg: `logged out successfully` });
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {POST} /api/auth/forget-Password
+ * @description Send password recovery OTP to user email
+ */
 export const forgetPasswordService = async (req, res) => {
   // get the email of the user
   const { email } = req.body;
@@ -386,6 +423,12 @@ export const forgetPasswordService = async (req, res) => {
   res.status(200).json({ msg: `please check your email`, recoveryToken });
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {PATCH} /api/auth/Reset-Password
+ * @description Reset user password using OTP
+ */
 export const resetPasswordService = async (req, res) => {
   // get otp , new password and the user
   const { otp, newPassword } = req.body;
@@ -420,6 +463,12 @@ export const resetPasswordService = async (req, res) => {
   res.status(200).json({ msg: `Password has been changed, Now try to login` });
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {POST} /api/auth/refresh-token
+ * @description Refresh access token using refresh token
+ */
 export const refreshTokenServices = async (req, res) => {
   // get the refreshed token
   const { refreshTokenData } = req.loggedData;
@@ -441,6 +490,12 @@ export const refreshTokenServices = async (req, res) => {
   res.status(200).json({ msg: `token has been refreshed`, accessToken });
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {PATCH} /api/auth/update-password
+ * @description Update user password after verifying current password
+ */
 export const updatePasswordServices = async (req, res) => {
   // get user data and the token
   const { user, tokenData, refreshTokenData } = req.loggedData;
@@ -482,6 +537,12 @@ export const updatePasswordServices = async (req, res) => {
   res.status(200).json({ msg: `password has been updated. Now please log in again` });
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {POST} /api/auth/resend-email
+ * @description Resend email for password recovery OTP
+ */
 export const resendEmailService = async (req, res) => {
   // get user data from token
   const { user } = req.loggedData;

@@ -2,6 +2,12 @@ import mongoose from "mongoose";
 import { users, messages } from "../../../DB/Models/index.js";
 import fs from "node:fs";
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {PUT} /api/users/update
+ * @description Update user profile information
+ */
 export const updateService = async (req, res) => {
   const {
     user: { _id },
@@ -22,6 +28,12 @@ export const updateService = async (req, res) => {
   res.status(200).json({ msg: `updated successfully`, newData: updatedUser });
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {DELETE} /api/users/delete-user
+ * @description Delete user account and all related messages
+ */
 export const deleteService = async (req, res) => {
   // get the authenticated user
   const {
@@ -58,6 +70,12 @@ export const deleteService = async (req, res) => {
   res.status(200).json({ msg: `user has been deleted` });
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {GET} /api/users/list-users
+ * @description List all confirmed users
+ */
 export const listUsersServices = async (req, res) => {
   // get all users
 
@@ -66,6 +84,12 @@ export const listUsersServices = async (req, res) => {
   res.status(200).json(listedUsers);
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {GET} /api/users/user-data/:id
+ * @description Get public profile data for a user
+ */
 export const getProfileDataServices = async (req, res) => {
   // get userId from params
   const { id } = req.params;
@@ -81,6 +105,12 @@ export const getProfileDataServices = async (req, res) => {
   res.status(200).json(...user);
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {GET} /api/users/user-messages
+ * @description Get all messages for the authenticated user
+ */
 export const getUserMessagesService = async (req, res) => {
   // get the user Id from params
   const { user } = req.loggedData;
@@ -91,6 +121,12 @@ export const getUserMessagesService = async (req, res) => {
   res.status(200).json(userMessages);
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {PATCH} /api/users/message-privacy/:messageId
+ * @description Change privacy status of a message
+ */
 export const messagePrivacyService = async (req, res) => {
   // get the user data form the token
   const { user } = req.loggedData;
@@ -112,6 +148,12 @@ export const messagePrivacyService = async (req, res) => {
   res.status(200).json({ msg: `message status has been changed to ${messageState}` });
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {DELETE} /api/users/delete-message/:messageId
+ * @description Delete a specific message for the authenticated user
+ */
 export const deleteMessageService = async (req, res) => {
   // get user id from the token
   const { user } = req.loggedData;
@@ -130,6 +172,12 @@ export const deleteMessageService = async (req, res) => {
   res.status(200).json({ msg: `message has been deleted` });
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {PATCH} /api/users/Upload-Profile-Picture
+ * @description Upload a new profile picture for the authenticated user
+ */
 export const uploadProfilePictureService = async (req, res) => {
   const { user } = req.loggedData;
 
@@ -143,6 +191,12 @@ export const uploadProfilePictureService = async (req, res) => {
   res.status(200).json({ msg: `Profile pic added successfully`, file: req.file });
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @API {DELETE} /api/users/Delete-Profile-Picture
+ * @description Delete the profile picture of the authenticated user
+ */
 export const deleteProfilePictureService = async (req, res) => {
   const { user } = req.loggedData;
 
