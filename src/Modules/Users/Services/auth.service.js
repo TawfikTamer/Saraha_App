@@ -494,33 +494,17 @@ export const resendEmailService = async (req, res) => {
   const newOTP = nanoid();
 
   const hashedNewOTP = await bycrpt.hash(newOTP, parseInt(process.env.SALT_ROUNDS));
+  userOPT.recovery = hashedNewOTP;
 
-  // check if the this is recovery or registration
-  let emailContent;
-  if (userOPT.confirm) {
-    userOPT.confirm = hashedNewOTP;
-    emailContent = {
-      to: user.email,
-      subject: `Email Confirmation`,
-      content: `<h1>
-      Your Confirmation otp is
-      <h2>${newOTP}</h2>
-      </h1>;`,
-    };
-  } else if (userOPT.recovery) {
-    userOPT.recovery = hashedNewOTP;
-    emailContent = {
-      to: user.email,
-      subject: `password recover`,
-      content: `<h1>
+  // send new email
+  emitter.emit("sendEmail", {
+    to: user.email,
+    subject: `password recover`,
+    content: `<h1>
       Your otp to recover the password is
       <h2>${newOTP}</h2>
       </h1>;`,
-    };
-  }
-
-  // send new email
-  emitter.emit("sendEmail", emailContent);
+  });
 
   // update the attempts
   const newAttempt = userOPT.attemptNumber + 1;
