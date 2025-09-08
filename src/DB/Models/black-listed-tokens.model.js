@@ -1,7 +1,16 @@
 import mongoose from "mongoose";
 
 const blackListTokenSchema = mongoose.Schema({
-  tokenId: { type: String, required: true, index: { name: "idx_blackListToken" } },
+  accsessTokenId: {
+    type: String,
+    required: true,
+    index: { name: "idx_accsessToken" },
+  },
+  refreshTokenId: {
+    type: String,
+    required: true,
+    index: { name: "idx_refreshToken" },
+  },
   expirationDate: {
     type: Date,
     required: true,

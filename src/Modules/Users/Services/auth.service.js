@@ -308,11 +308,12 @@ export const loginService = async (req, res) => {
 
 export const logoutService = async (req, res) => {
   // get the token
-  const { user, tokenData } = req.loggedData;
+  const { user, tokenData, refreshTokenData } = req.loggedData;
 
   // Revoke the token
   blackListTokens.create({
-    tokenId: tokenData.jti,
+    accsessTokenId: tokenData.jti,
+    refreshTokenId: refreshTokenData.jti,
     expirationDate: new Date(tokenData.exp * 1000),
   });
 
@@ -445,7 +446,7 @@ export const refreshTokenServices = async (req, res) => {
 
 export const updatePasswordServices = async (req, res) => {
   // get user data and the token
-  const { user, tokenData } = req.loggedData;
+  const { user, tokenData, refreshTokenData } = req.loggedData;
 
   // get the current and new password
   const { currentPassword, newPassword } = req.body;
@@ -475,7 +476,8 @@ export const updatePasswordServices = async (req, res) => {
 
   // Revoke the token
   blackListTokens.create({
-    tokenId: tokenData.jti,
+    accsessTokenId: tokenData.jti,
+    refreshTokenId: refreshTokenData.jti,
     expirationDate: new Date(tokenData.exp * 1000),
   });
   await connectedDevices.findOneAndDelete({ userId: user._id });
