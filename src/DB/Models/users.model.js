@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
-import { genderEnum, providerEnum } from "../../common/Enums/user.enum.js";
-import { type } from "node:os";
+import { genderEnum, providerEnum } from "../../Common/Enums/index.js";
 
 const usersSchema = mongoose.Schema(
   {
@@ -37,23 +36,6 @@ const usersSchema = mongoose.Schema(
     profilePic: {
       type: String,
     },
-    otps: {
-      confirm: {
-        type: String,
-      },
-      recovery: {
-        type: String,
-      },
-      expiration: {
-        type: Date,
-      },
-      attemptNumber: {
-        type: Number,
-      },
-      lastEmailAttempt: {
-        type: Date,
-      },
-    },
     isConfirmed: {
       type: Boolean,
       default: false,
@@ -64,12 +46,6 @@ const usersSchema = mongoose.Schema(
       enum: Object.values(providerEnum),
       default: providerEnum.LOCAL,
     },
-    devicesConnected: [
-      {
-        jti: { type: String },
-        exp: { type: Date },
-      },
-    ],
   },
   {
     timestamps: true,

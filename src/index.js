@@ -5,7 +5,7 @@ import cors from "cors";
 import { dbConnection } from "./DB/db.connection.js";
 import { userRouter, authRouter, messagesRouter } from "./Modules/controllers.index.js";
 import { limit } from "./Middlewares/index.js";
-import { startCronJobs } from "./Utils/index.js";
+import { disconnectDevicesCronJob, revokeTokenCronJob } from "./Utils/index.js";
 
 const app = express();
 dbConnection();
@@ -21,7 +21,8 @@ const corsOptions = {
   },
 };
 
-startCronJobs();
+disconnectDevicesCronJob();
+revokeTokenCronJob();
 
 app.use(express.json());
 app.use("/users/Uploads", express.static("Uploads"));
@@ -45,6 +46,8 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
+  console.log(err);
+
   if (req.session?.inTransaction()) {
     req.session.abortTransaction();
     req.session.endSession();

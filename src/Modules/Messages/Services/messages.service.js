@@ -1,3 +1,4 @@
+import { messagePrivicyEnum } from "../../../Common/Enums/index.js";
 import { users, messages } from "../../../DB/Models/index.js";
 
 export const sendMessageServices = async (req, res) => {
@@ -28,7 +29,7 @@ export const publicMessagesService = async (req, res) => {
   }
 
   // get the public messages of this user
-  const publicMessage = await messages.find({ status: "public", receiverId: userId }, "-_id content");
+  const publicMessage = await messages.find({ status: messagePrivicyEnum.PUBLIC, receiverId: userId }, "-_id content");
 
   res.status(200).json(publicMessage);
 };

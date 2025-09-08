@@ -26,7 +26,7 @@ export const authenticationMiddleware = async (req, res, next) => {
   }
 
   // check if the token is not revoked
-  const revokedToken = await blackListTokens.findOne({ tokenId: tokenData.jti });
+  const revokedToken = await blackListTokens.findOne({ accsessTokenId: tokenData.jti });
   if (revokedToken) {
     return res.status(400).json({ msg: `token is revoked` });
   }

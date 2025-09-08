@@ -10,8 +10,8 @@ export const updateService = async (req, res) => {
 
   // check if ths email is already exist
   if (email) {
-    const dublicatedUser = await users.findOne({ email });
-    if (dublicatedUser._id.toString() != _id.toString()) {
+    const duplicatedUser = await users.findOne({ email });
+    if (duplicatedUser._id.toString() != _id.toString()) {
       return res.status(400).json({ msg: `this email is already exist` });
     }
   }
@@ -61,16 +61,9 @@ export const deleteService = async (req, res) => {
 export const listUsersServices = async (req, res) => {
   // get all users
 
-  const listedUsers = await users.find().select("-password -phoneNumber -otps");
-  let confirmedUsers = [];
+  const listedUsers = await users.find({ isConfirmed: true }).select("-password -phoneNumber -otps");
 
-  for (const user of listedUsers) {
-    if (user.isConfirmed) {
-      confirmedUsers.push(user);
-    }
-  }
-
-  res.status(200).json(confirmedUsers);
+  res.status(200).json(listedUsers);
 };
 
 export const getProfileDataServices = async (req, res) => {
@@ -78,7 +71,7 @@ export const getProfileDataServices = async (req, res) => {
   const { id } = req.params;
 
   // check if the user is exist and confirmed
-  const user = await users.find({ _id: id, isConfirmed: true }, "firstName lastName -_id").lean({ virsual: false });
+  const user = await users.findOne({ _id: id, isConfirmed: true }, "firstName lastName -_id").lean({ virsual: false });
 
   if (user.length == 0) {
     return res.status(404).json({ msg: `user not found` });
@@ -141,7 +134,10 @@ export const uploadProfilePictureService = async (req, res) => {
   const { user } = req.loggedData;
 
   // upload the profile pic
-  user.profilePic = req.file?.path;
+  if (!req.file) {
+    return res.status(400).json({ msg: `You must upload a photo` });
+  }
+  user.profilePic = req.file.path;
   await user.save();
 
   res.status(200).json({ msg: `Profile pic added successfully`, file: req.file });

@@ -12,7 +12,7 @@ userRouter.put("/update", authenticationMiddleware, validationMiddleware(updateS
 userRouter.patch(
   "/Upload-Profile-Picture",
   authenticationMiddleware,
-  localUpload({ path: `Profile-Pic`, limits: { files: 1, fileSize: 1024 * 1024 } }).single("test"),
+  localUpload({ path: `Profile-Pic`, limits: { files: 1, fileSize: 1024 * 1024 } }).single("avatar"),
   services.uploadProfilePictureService
 );
 

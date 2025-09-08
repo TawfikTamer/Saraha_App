@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { messagePrivicyEnum } from "../../Common/Enums/message.enum.js";
+import { messagePrivicyEnum } from "../../Common/Enums/index.js";
 
 const messagesSchema = mongoose.Schema(
   {
