@@ -4,6 +4,7 @@ import bycrpt from "bcrypt";
 import { customAlphabet, nanoid } from "nanoid";
 import { v4 as uuidV4 } from "uuid";
 import { OAuth2Client } from "google-auth-library";
+import { providerEnum } from "../../../Common/Enums/index.js";
 
 export const registerServices = async (req, res) => {
   // get data from body
@@ -14,9 +15,6 @@ export const registerServices = async (req, res) => {
   if (findUser) {
     if (findUser.providers == providerEnum.GOOGLE) {
       return res.status(400).json({ msg: `User Already exist, Try to login using google` });
-    }
-    if (findUser.isConfirmed == false) {
-      await users.findByIdAndDelete(findUser._id);
     }
   }
 
@@ -43,15 +41,24 @@ export const registerServices = async (req, res) => {
   const hashedOTP = await bycrpt.hash(OTP, parseInt(process.env.SALT_ROUNDS));
 
   // add the user to DB
-  const user = await users.create({
-    firstName,
-    lastName,
-    email,
-    password: hashedPassword,
-    phoneNumber: encryptedPhoneNumber,
-    gender,
-    providers: providerEnum.LOCAL,
-  });
+  const user = await users.findOneAndUpdate(
+    {
+      email,
+      isConfirmed: false,
+    },
+    {
+      firstName,
+      lastName,
+      email,
+      password: hashedPassword,
+      phoneNumber: encryptedPhoneNumber,
+      gender,
+      providers: providerEnum.LOCAL,
+    },
+    {
+      upsert: true,
+    }
+  );
 
   // add the otp
   await userOTPs.create({
