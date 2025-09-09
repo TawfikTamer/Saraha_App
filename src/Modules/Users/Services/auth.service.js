@@ -1,5 +1,5 @@
 import { users, blackListTokens, userOTPs, connectedDevices } from "../../../DB/Models/index.js";
-import { generateToken, encrypt, emitter, decodeToken, deleteOTP } from "../../../Utils/index.js";
+import { generateToken, encrypt, emitter, deleteOTP } from "../../../Utils/index.js";
 import bycrpt from "bcrypt";
 import { customAlphabet, nanoid } from "nanoid";
 import { v4 as uuidV4 } from "uuid";
@@ -83,7 +83,11 @@ export const registerServices = async (req, res) => {
   );
 
   // create auth token
-  const authenticationToken = generateToken(
+  /*
+A temporary token generated during user registration. Used to securely pass user data through the email confirmation process.
+Expires after a short period and is not used for authentication after confirmation. 
+*/
+  const dataFlowToken = generateToken(
     {
       _id: user._id,
       email,
@@ -95,7 +99,7 @@ export const registerServices = async (req, res) => {
     }
   );
 
-  res.status(201).json({ msg: `Registered successfully, now please confirm your email`, authenticationToken });
+  res.status(201).json({ msg: `Registered successfully, now please confirm your email`, dataFlowToken });
 };
 
 /**
