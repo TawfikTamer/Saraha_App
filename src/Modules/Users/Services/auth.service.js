@@ -1,5 +1,5 @@
 import { users, blackListTokens, userOTPs, connectedDevices } from "../../../DB/Models/index.js";
-import { generateToken, encrypt, emitter, deleteOTP } from "../../../Utils/index.js";
+import { generateToken, encrypt, emitter, deleteOTP, VERIFICATION_EMAIL, WELCOME_EMAIL, PASSWORD_RESET_REQUEST, PASSWORD_CHANGED } from "../../../Utils/index.js";
 import bycrpt from "bcrypt";
 import { customAlphabet, nanoid } from "nanoid";
 import { v4 as uuidV4 } from "uuid";
@@ -37,10 +37,7 @@ export const registerServices = async (req, res) => {
   emitter.emit("sendEmail", {
     to: email,
     subject: `Email Confirmation`,
-    content: `<h1>
-      Your Confirmation otp is
-      <h2>${OTP}</h2>
-      </h1>;`,
+    content: VERIFICATION_EMAIL(OTP),
   });
 
   // hash the OTP before sending to db
@@ -163,6 +160,13 @@ export const gmailAuthService = async (req, res) => {
         googleSub: sub,
         providers: providerEnum.GOOGLE,
       });
+
+      // send welcome email
+      emitter.emit("sendEmail", {
+        to: user.email,
+        subject: `Welcome Email`,
+        content: WELCOME_EMAIL(user.firstName),
+      });
     }
   }
 
@@ -247,6 +251,13 @@ export const confirmService = async (req, res) => {
   // if it is correct , delete the otp from db
   await user.updateOne({ isConfirmed: true });
   deleteOTP(user);
+
+  // send welcome email
+  emitter.emit("sendEmail", {
+    to: user.email,
+    subject: `Welcome Email`,
+    content: WELCOME_EMAIL(user.firstName),
+  });
 
   res.status(200).json({ msg: `email has been confirmed, Now please sing in` });
 };
@@ -402,10 +413,7 @@ export const forgetPasswordService = async (req, res) => {
   emitter.emit("sendEmail", {
     to: email,
     subject: `password recover`,
-    content: `<h1>
-      Your otp to recover the password is
-      <h2>${recoveryOTP}</h2>
-      </h1>;`,
+    content: PASSWORD_RESET_REQUEST(recoveryOTP),
   });
 
   // hash the OTP before sending to db
@@ -463,6 +471,13 @@ export const resetPasswordService = async (req, res) => {
   await connectedDevices.findOneAndDelete({ userId: user._id });
   deleteOTP(user);
 
+  // send an email to inform the user about
+  emitter.emit("sendEmail", {
+    to: user.email,
+    subject: `password Changed`,
+    content: PASSWORD_CHANGED(),
+  });
+
   res.status(200).json({ msg: `Password has been changed, Now try to login` });
 };
 
@@ -519,11 +534,7 @@ export const updatePasswordServices = async (req, res) => {
   emitter.emit("sendEmail", {
     to: user.email,
     subject: `password Changed`,
-    content: `<h1>
-      Your password has been Changed
-      <h2>this action happend at ${new Date().toLocaleString()}</h2>
-      <h3>if this is not you, please restart your password</h3>
-      </h1>;`,
+    content: PASSWORD_CHANGED(),
   });
 
   // save the new password in the DB
